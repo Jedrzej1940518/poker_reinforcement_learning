@@ -14,13 +14,15 @@ class PlayerData:
 
 @dataclass
 class SimpleState:
-    players_data: list[PlayerData]  # [todo] add current bet and indexes
+    players_data: list[PlayerData]
     community_cards: str = ""
 
     pot: float = 0
     middle_pot: float = 0
 
     big_blind: int = 1
+
+    actor_index: int = 0
 
     def static_update(self, pokerkit_state: State):
         total_bets = 0
@@ -45,6 +47,7 @@ class SimpleState:
             player.actor = False
 
         if len(pokerkit_state.actor_indices):
+            self.actor_index = pokerkit_state.actor_indices[0]
             self.players_data[pokerkit_state.actor_indices[0]].actor = True
 
         for board in pokerkit_state.board_cards:

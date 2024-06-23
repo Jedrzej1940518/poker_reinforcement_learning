@@ -2,8 +2,7 @@ import tkinter as tk
 import math
 import queue
 
-from pokerkit import State
-from game_state import SimpleState, PlayerData
+from game_logic.game_state import SimpleState, PlayerData
 
 
 player_name_font_size = 22
@@ -263,11 +262,11 @@ class Table:
 
 
 class GUI:
-    def __init__(self, simple_state: SimpleState, canvas_width=800, canvas_height=800):
-        self.simple_state = simple_state
+    def __init__(self, canvas_width=800, canvas_height=800):
         self.canvas_width = canvas_width
         self.canvas_height = canvas_height
         self.event_queue = queue.Queue()
+        self.simple_state = None
 
     def create_window(self):
         self.root = tk.Tk()
@@ -288,8 +287,8 @@ class GUI:
         self.canvas.delete("all")
         self.table.draw(self.canvas, self.simple_state)
 
-    def update_state(self, pokerkit_state: State):
-        self.simple_state.update_state(pokerkit_state)
+    def update_state(self, simple_state: SimpleState):
+        self.simple_state = simple_state
 
     def add_event(self, event, *args):
         self.event_queue.put((event, args))
@@ -313,7 +312,6 @@ class GUI:
         self.root.after(100, self._update)
 
     def main_loop(self):
-        self.draw()
         self._update()
         self.root.mainloop()
 

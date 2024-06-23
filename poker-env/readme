@@ -1,0 +1,5 @@
+
+
+from root directory run this as:
+
+python -m rl_training.train
