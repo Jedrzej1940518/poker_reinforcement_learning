@@ -2,7 +2,7 @@ import tkinter as tk
 import math
 import queue
 
-from game_logic.game_state import SimpleState, PlayerData
+from game_logic.game_state import SimpleState, PlayerData, split_cards
 
 
 player_name_font_size = 22
@@ -236,8 +236,7 @@ class Table:
         x0 = self.x - r // 2 + community_cards_offset
         y0 = self.x - self.radius // 2
 
-        community_cards = simple_state.community_cards
-        cards = [community_cards[i : i + 2] for i in range(0, len(community_cards), 2)]
+        cards = split_cards(simple_state.community_cards)
 
         for n, card in enumerate(cards):
             Card(card).draw(canvas, x0 + n * card_width, y0)

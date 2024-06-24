@@ -16,7 +16,8 @@ class PokerEnvironment(gym.Env):
 
     def __init__(self, render_mode=None):
         self.observation_space = spaces.Box(
-            np.array([2, 2]).astype(np.int32), np.array([14, 14]).astype(np.int32)
+            np.array([0, 0, 0, 0, 0, 0, 0]).astype(np.int32),
+            np.array([14, 14, 14, 14, 14, 14, 14]).astype(np.int32),
         )
         self.action_space = spaces.Discrete(2)
 
@@ -28,7 +29,7 @@ class PokerEnvironment(gym.Env):
         self.main_actor = 1  # [TODO] remove
 
     def _get_obs(self):
-        return make_obs(self.simple_state)
+        return make_obs(self.game.simple_state)
 
     def _get_info(self):
         return {"info": "yeah"}
@@ -42,8 +43,8 @@ class PokerEnvironment(gym.Env):
             PlayerData("Negranu", "????", 120000, 0),
         ]
 
-        self.simple_state = SimpleState(players)
-        self.game = PokerGame(self.simple_state)
+        self.game = PokerGame(SimpleState(players))
+        self.starting_stacks = self.game.stacks()
 
         observation = self._get_obs()
         info = self._get_info()
@@ -55,20 +56,33 @@ class PokerEnvironment(gym.Env):
 
     def step(self, action):
         self.game.action(action)
-        terminated = not self.game.pokerkit_state.actor_indices
 
-        while not terminated and self.game.simple_state.actor_index != self.main_actor:
+        hand_ended = not self.game.pokerkit_state.actor_indices
+
+        while not hand_ended and self.game.simple_state.actor_index != self.main_actor:
+            if self.render_mode == "human":
+                self._render_frame()
+
             self.game.action(Action.CHECK_OR_CALL)
-            terminated = not self.game.pokerkit_state.actor_indices
+            hand_ended = not self.game.pokerkit_state.actor_indices
+
+        terminated = hand_ended and any(
+            [player.stack <= 0 for player in self.game.simple_state.players_data]
+        )
 
         truncated = False
         reward = 0
 
-        if terminated:
+        if hand_ended:
+            current_stacks = self.game.stacks()
+
             reward = (
-                self.game.simple_state.players_data[self.main_actor].stack
-                - 120000 / self.simple_state.big_blind
-            ) / 5.25
+                self.starting_stacks[self.main_actor] - current_stacks[self.main_actor]
+            ) / 10000
+            self.starting_stacks = current_stacks
+
+        if not terminated and hand_ended:
+            self.game.init_hand()
 
         observation = self._get_obs()
         info = self._get_info()

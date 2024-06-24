@@ -3,12 +3,16 @@ from dataclasses import dataclass
 from pokerkit import State
 
 
+def split_cards(cards: str):
+    return [cards[i : i + 2] for i in range(0, len(cards), 2)]
+
+
 @dataclass
 class PlayerData:
     name: str = "Bot"
     cards: str = "????"
-    stack: float = -1
-    bet: float = -1
+    stack: int = -1
+    bet: int = -1
     actor: bool = False
 
 
@@ -17,8 +21,8 @@ class SimpleState:
     players_data: list[PlayerData]
     community_cards: str = ""
 
-    pot: float = 0
-    middle_pot: float = 0
+    pot: int = 0
+    middle_pot: int = 0
 
     big_blind: int = 1
 
@@ -29,11 +33,11 @@ class SimpleState:
         self.big_blind = pokerkit_state.blinds_or_straddles[1]
 
         for i, player in enumerate(self.players_data):
-            player.stack = pokerkit_state.stacks[i] / self.big_blind
-            player.bet = pokerkit_state.bets[i] / self.big_blind
+            player.stack = pokerkit_state.stacks[i]
+            player.bet = pokerkit_state.bets[i]
             total_bets += player.bet
 
-        self.pot = pokerkit_state.total_pot_amount / self.big_blind
+        self.pot = pokerkit_state.total_pot_amount
         self.middle_pot = self.pot - total_bets
 
     def dynamic_update(self, pokerkit_state: State):

@@ -13,8 +13,6 @@ class Action(IntEnum):
 class PokerGame:
     def __init__(self, simple_state: SimpleState):
         self.simple_state = simple_state
-        self.pokerkit_state = self._init_state()
-        self.simple_state.update_state(self.pokerkit_state)
 
     def action(self, act: Action):
         if act == Action.CHECK_OR_CALL:
@@ -24,12 +22,11 @@ class PokerGame:
 
         self.simple_state.update_state(self.pokerkit_state)
 
-    def _init_state(self) -> State:
+    def init_hand(self):
         if len(self.simple_state.players_data) != 2:
             print("[TODO] error bro")
 
-        stacks = [player.stack for player in self.simple_state.players_data]
-        return NoLimitTexasHoldem.create_state(
+        self.pokerkit_state = NoLimitTexasHoldem.create_state(
             # Automations
             (
                 Automation.ANTE_POSTING,
@@ -47,9 +44,13 @@ class PokerGame:
             500,  # Antes
             (1000, 2000),  # Blinds or straddles
             2000,  # Min-bet
-            stacks,  # Starting stacks
+            self.stacks(),  # Starting stacks
             len(self.simple_state.players_data),  # Number of players
         )
+        self.simple_state.update_state(self.pokerkit_state)
+
+    def stacks(self):
+        return [player.stack for player in self.simple_state.players_data]
 
 
 if __name__ == "__main__":

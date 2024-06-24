@@ -32,7 +32,7 @@ def train_human_rendering():
 def train_sb3():
     env = PokerEnvironment()
     model = DQN("MlpPolicy", env, verbose=1)
-    model.learn(total_timesteps=50000, log_interval=4)
+    model.learn(total_timesteps=10000, log_interval=4)
     model.save("dqn_poker")
     del model
 
@@ -40,8 +40,11 @@ def train_sb3():
 def testing_loop(env, model):
     obs, info = env.reset()
     while True:
+        print("obs", obs)
+
         action, _states = model.predict(obs, deterministic=True)
         obs, reward, terminated, truncated, info = env.step(action)
+        print("reward", reward)
         if terminated or truncated:
             obs, info = env.reset()
 
@@ -58,5 +61,5 @@ def test_sb3():
 
 if __name__ == "__main__":
     # train_human_rendering()
-    # train_sb3()
+    train_sb3()
     test_sb3()

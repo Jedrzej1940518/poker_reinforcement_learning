@@ -1,8 +1,11 @@
-from game_logic.game_state import SimpleState
+from game_logic.game_state import SimpleState, split_cards
 
 
 def card_to_int(card):
     match card[0]:
+        case "0":  # empty community card
+            return 0
+
         case "2":
             return 2
         case "3":
@@ -34,5 +37,14 @@ def card_to_int(card):
 
 
 def make_obs(state: SimpleState):
-    cards = state.players_data[state.actor_index].cards
-    return [card_to_int(cards[:2]), card_to_int(cards[2:])]
+    player_cards = split_cards(state.players_data[state.actor_index].cards)
+    community_cards = split_cards(state.community_cards)
+    for i in range(5 - len(community_cards)):
+        community_cards.append("0x")
+
+    print(player_cards)
+    print(community_cards)
+
+    return [card_to_int(card) for card in player_cards] + [
+        card_to_int(card) for card in community_cards
+    ]
