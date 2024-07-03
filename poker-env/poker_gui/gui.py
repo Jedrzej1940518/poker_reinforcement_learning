@@ -5,11 +5,17 @@ import queue
 from game_logic.game_state import SimpleState, PlayerData, split_cards
 
 
+action_font_size = 18
+action_text_height = 30
+
 player_name_font_size = 22
 player_stack_font_size = 18
 
 player_box_width = 100
+player_name_box_height = 30
 player_box_height = 140
+player_stack_box_size = 30
+player_hand_text_size = 30
 
 card_width = player_box_width / 2
 card_height = player_box_height / 2
@@ -106,36 +112,45 @@ class Player:
 
     def draw(self, canvas: tk.Canvas, x0: int, y0: int):
         x1 = x0 + player_box_width
-        y1 = y0 + player_box_height
+        # drawing action
+
+        canvas.create_text(
+            (x1 + x0) / 2,
+            y0 + action_text_height / 2,
+            text=self.player_data.action,
+            fill="white",
+            font=("Helvetica", action_font_size, "bold"),
+        )
+        h = y0 + action_text_height
+
         # drawing cards
         card_1, card_2 = get_cards(self.player_data.cards)
-        card_1.draw(canvas, x0, y0)
-        card_2.draw(canvas, x0 + card_width, y0)
-
+        card_1.draw(canvas, x0, h)
+        card_2.draw(canvas, x0 + card_width, h)
+        h = h + card_height
         # drawing name
-        card_y1 = y0 + card_height
-        name_box_y1 = (y0 + card_height + y0 + player_box_height) // 2
-
         draw_text_rectangle(
             canvas,
             x0,
-            card_y1,
+            h,
             x1,
-            name_box_y1,
+            h + player_name_box_height,
             self.player_data.name,
             player_name_font_size,
         )
+        h = h + player_name_box_height
 
         # drawing stack
         draw_text_rectangle(
             canvas,
             x0,
-            name_box_y1,
+            h,
             x1,
-            y1,
+            h + player_stack_box_size,
             str(self.player_data.stack) + " BB",
             player_stack_font_size,
         )
+        h = h + player_stack_box_size
 
         # actor outline
         if self.player_data.actor:
@@ -143,10 +158,36 @@ class Player:
                 x0,
                 y0,
                 x1,
-                y1,
+                h,
                 outline="yellow",
                 width=3,
             )
+
+        # drawing hand
+        splitted_hand = self.player_data.hand.split("(", 1)
+        if len(splitted_hand) < 2:
+            return
+
+        hand_name = splitted_hand[0].strip()
+        cards = splitted_hand[1].strip(")")
+
+        canvas.create_text(
+            (x1 + x0) / 2,
+            h + player_hand_text_size / 2,
+            text=hand_name,
+            fill="white",
+            font=("Helvetica", action_font_size, "bold"),
+        )
+
+        h += player_hand_text_size
+
+        canvas.create_text(
+            (x1 + x0) / 2,
+            h + player_hand_text_size / 2,
+            text=cards,
+            fill="white",
+            font=("Helvetica", action_font_size, "bold"),
+        )
 
 
 class Chips:

@@ -36,14 +36,11 @@ def card_to_int(card):
             raise Exception(f"whats that card? {card[0]}")
 
 
-def make_obs(state: SimpleState):
-    player_cards = split_cards(state.players_data[state.actor_index].cards)
+def make_obs(state: SimpleState, main_actor: int):
+    player_cards = split_cards(state.players_data[main_actor].cards)
     community_cards = split_cards(state.community_cards)
     for i in range(5 - len(community_cards)):
         community_cards.append("0x")
-
-    print(player_cards)
-    print(community_cards)
 
     return [card_to_int(card) for card in player_cards] + [
         card_to_int(card) for card in community_cards

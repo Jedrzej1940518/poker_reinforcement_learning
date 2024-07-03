@@ -15,10 +15,14 @@ class PlayerData:
     bet: int = -1
     actor: bool = False
 
+    action: str = ""
+    hand: str = "high card"
+
 
 @dataclass
 class SimpleState:
     players_data: list[PlayerData]
+
     community_cards: str = ""
 
     pot: int = 0
@@ -48,6 +52,8 @@ class SimpleState:
                 player.cards = repr(pokerkit_state.hole_cards[i][0]) + repr(
                     pokerkit_state.hole_cards[i][1]
                 )
+                player.hand = str(pokerkit_state.get_hand(i, 0, 0))
+
             player.actor = False
 
         if len(pokerkit_state.actor_indices):
@@ -61,3 +67,9 @@ class SimpleState:
     def update_state(self, pokerkit_state: State):
         self.static_update(pokerkit_state)
         self.dynamic_update(pokerkit_state)
+
+    def save_action(self, action: str, action_actor: int):
+        for player in self.players_data:
+            player.action = ""
+
+        self.players_data[action_actor].action = action

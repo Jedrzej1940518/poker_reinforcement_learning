@@ -61,5 +61,5 @@ def test_sb3():
 
 if __name__ == "__main__":
     # train_human_rendering()
-    train_sb3()
+    # train_sb3()
     test_sb3()

@@ -14,7 +14,7 @@ from rl_environment.observation import make_obs
 class PokerEnvironment(gym.Env):
     metadata = {"render_modes": ["human"], "render_fps": 4}
 
-    def __init__(self, render_mode=None):
+    def __init__(self, init_table_simple_state=None, render_mode=None):
         self.observation_space = spaces.Box(
             np.array([0, 0, 0, 0, 0, 0, 0]).astype(np.int32),
             np.array([14, 14, 14, 14, 14, 14, 14]).astype(np.int32),
@@ -28,8 +28,18 @@ class PokerEnvironment(gym.Env):
 
         self.main_actor = 1  # [TODO] remove
 
+        self.init_table_simple_state = init_table_simple_state
+
+        if init_table_simple_state is None:
+            self.init_table_simple_state = lambda: SimpleState(
+                players_data=[
+                    PlayerData("Hans", "????", 120000, 0),
+                    PlayerData("Negranu", "????", 120000, 0),
+                ]
+            )
+
     def _get_obs(self):
-        return make_obs(self.game.simple_state)
+        return make_obs(self.game.simple_state, self.main_actor)
 
     def _get_info(self):
         return {"info": "yeah"}
@@ -38,13 +48,8 @@ class PokerEnvironment(gym.Env):
         # We need the following line to seed self.np_random
         super().reset(seed=seed)
 
-        players = [
-            PlayerData("Hans", "????", 120000, 0),
-            PlayerData("Negranu", "????", 120000, 0),
-        ]
-
-        self.game = PokerGame(SimpleState(players))
-        self.starting_stacks = self.game.stacks()
+        self.game = PokerGame(self.init_table_simple_state())
+        self.game.init_hand()
 
         observation = self._get_obs()
         info = self._get_info()
@@ -54,34 +59,39 @@ class PokerEnvironment(gym.Env):
 
         return observation, info
 
-    def step(self, action):
-        self.game.action(action)
-
-        hand_ended = not self.game.pokerkit_state.actor_indices
-
-        while not hand_ended and self.game.simple_state.actor_index != self.main_actor:
+    def skip_until_main_actor(self):
+        while (
+            not self.game.hand_ended()
+            and self.game.simple_state.actor_index != self.main_actor
+        ):
             if self.render_mode == "human":
                 self._render_frame()
 
             self.game.action(Action.CHECK_OR_CALL)
-            hand_ended = not self.game.pokerkit_state.actor_indices
 
-        terminated = hand_ended and any(
-            [player.stack <= 0 for player in self.game.simple_state.players_data]
-        )
+        if self.render_mode == "human":
+            self._render_frame()
+
+    def step(self, action):
+        stacks_and_bets = self.game.stacks_plus_bets()
+
+        self.skip_until_main_actor()
+
+        if not self.game.hand_ended():
+            self.game.action(action)
+
+        hand_ended = self.game.hand_ended()
+        terminated = self.game.table_ended()
 
         truncated = False
         reward = 0
 
         if hand_ended:
-            current_stacks = self.game.stacks()
-
             reward = (
-                self.starting_stacks[self.main_actor] - current_stacks[self.main_actor]
+                self.game.stacks()[self.main_actor] - stacks_and_bets[self.main_actor]
             ) / 10000
-            self.starting_stacks = current_stacks
 
-        if not terminated and hand_ended:
+        if hand_ended and not terminated:
             self.game.init_hand()
 
         observation = self._get_obs()

@@ -13,12 +13,15 @@ class Action(IntEnum):
 class PokerGame:
     def __init__(self, simple_state: SimpleState):
         self.simple_state = simple_state
+        self.pokerkit_state = None
 
     def action(self, act: Action):
-        if act == Action.CHECK_OR_CALL:
-            self.pokerkit_state.check_or_call()
-        elif act == Action.RAISE:
+        if act == Action.RAISE and self.pokerkit_state.can_complete_bet_or_raise_to():
+            self.simple_state.save_action("Raise", self.simple_state.actor_index)
             self.pokerkit_state.complete_bet_or_raise_to()
+        else:
+            self.simple_state.save_action("Call", self.simple_state.actor_index)
+            self.pokerkit_state.check_or_call()
 
         self.simple_state.update_state(self.pokerkit_state)
 
@@ -51,6 +54,17 @@ class PokerGame:
 
     def stacks(self):
         return [player.stack for player in self.simple_state.players_data]
+
+    def hand_ended(self):
+        return not self.pokerkit_state.actor_indices
+
+    def table_ended(self):
+        return self.hand_ended() and (
+            sum(1 if stack > 0 else 0 for stack in self.stacks()) == 1  # one stack left
+        )
+
+    def stacks_plus_bets(self):
+        return [player.bet + player.stack for player in self.simple_state.players_data]
 
 
 if __name__ == "__main__":
